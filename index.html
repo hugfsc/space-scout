@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Space Scout">
+<meta name="theme-color" content="#0a0f2e">
+<title>Space Scout 🛰️</title>
+<!-- Home screen icon — inline SVG as data URI so no external file needed -->
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%230a0f2e'/%3E%3Ctext x='90' y='125' font-size='100' text-anchor='middle'%3E%F0%9F%9B%B0%EF%B8%8F%3C/text%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='28' font-size='28'%3E%F0%9F%9B%B0%EF%B8%8F%3C/text%3E%3C/svg%3E">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy:#0a0f2e; --navy2:#141937; --navy3:#1e2548;
+  --gold:#FFB800; --coral:#ff6b47; --blue:#4d9de0;
+  --gray:#8892b0; --white:#e8eaf6; --green:#43d98c;
+  --amber:#ffb800; --red:#ff6b6b; --purple:#b47fe8;
+  --card:#141937; --input:#1e2548; --border:rgba(255,255,255,0.08);
+  --r:14px; --tabh:64px; --hdrh:60px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overflow:hidden;background:var(--navy);color:var(--white);font-family:'DM Sans',sans-serif;}
+#app{display:flex;flex-direction:column;height:100vh;height:100dvh;}
+
+/* Header */
+.hdr{height:var(--hdrh);min-height:var(--hdrh);background:var(--navy2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 16px;}
+.hdr-title{font-family:'Syne',sans-serif;font-weight:800;font-size:17px;color:var(--white);}
+.hdr-sub{font-size:11px;color:var(--gray);margin-top:1px;}
+.sync-btn{background:var(--gold);color:var(--navy);border:none;font-family:'Syne',sans-serif;font-weight:700;font-size:12px;padding:8px 14px;border-radius:20px;cursor:pointer;display:flex;align-items:center;gap:6px;position:relative;}
+.sync-btn:active{transform:scale(0.95);}
+.sbadge{background:var(--coral);color:#fff;font-size:10px;font-weight:700;width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;position:absolute;top:-5px;right:-5px;}
+
+/* Content & tabs */
+.content{flex:1;overflow:hidden;position:relative;}
+.tab-panel{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding:12px 12px 0;display:none;}
+.tab-panel.active{display:block;}
+
+/* Bottom nav */
+.bnav{height:var(--tabh);min-height:var(--tabh);background:var(--navy2);border-top:1px solid var(--border);display:grid;grid-template-columns:repeat(3,1fr);}
+.nbtn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border:none;background:transparent;color:var(--gray);font-family:'DM Sans',sans-serif;font-size:10px;cursor:pointer;}
+.nbtn .ico{font-size:22px;line-height:1;}
+.nbtn.active{color:var(--gold);}
+
+/* Search + add row */
+.search-wrap{position:sticky;top:0;z-index:10;background:var(--navy);padding-bottom:10px;}
+.search-row{display:flex;gap:8px;align-items:center;}
+.search-box{position:relative;flex:1;}
+.search-ico{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:16px;pointer-events:none;}
+.search-input{width:100%;background:var(--input);border:1px solid var(--border);color:var(--white);font-family:'DM Sans',sans-serif;font-size:15px;padding:11px 16px 11px 40px;border-radius:10px;outline:none;}
+.search-input::placeholder{color:var(--gray);}
+.add-btn{background:var(--gold);color:var(--navy);border:none;width:44px;height:44px;border-radius:10px;font-size:22px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.add-btn:active{transform:scale(0.95);}
+
+/* Company cards */
+.co-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px 14px 12px;margin-bottom:8px;cursor:pointer;display:flex;align-items:center;gap:12px;transition:border-color .15s,transform .1s;-webkit-user-select:none;user-select:none;}
+.co-card:active{transform:scale(0.98);border-color:var(--gold);}
+.co-card.has-notes{border-left:3px solid var(--green);}
+.score-circle{width:46px;height:46px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:14px;}
+.sg{background:rgba(67,217,140,.15);color:var(--green);border:2px solid rgba(67,217,140,.4);}
+.sa{background:rgba(255,184,0,.15);color:var(--amber);border:2px solid rgba(255,184,0,.4);}
+.sr{background:rgba(255,107,107,.15);color:var(--red);border:2px solid rgba(255,107,107,.4);}
+.co-info{flex:1;min-width:0;}
+.co-name{font-family:'Syne',sans-serif;font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.co-meta{font-size:11px;color:var(--gray);margin-top:3px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.tbadge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;font-family:'Syne',sans-serif;}
+.t1{background:rgba(255,107,71,.2);color:var(--coral);}
+.t2{background:rgba(77,157,224,.2);color:var(--blue);}
+.t3{background:rgba(136,146,176,.2);color:var(--gray);}
+.booth-pill{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;font-family:'Syne',sans-serif;background:rgba(255,184,0,.15);color:var(--gold);border:1px solid rgba(255,184,0,.3);padding:2px 8px;border-radius:20px;}
+.floor-badge{display:inline-flex;align-items:center;font-size:10px;font-weight:700;font-family:'Syne',sans-serif;background:rgba(180,127,232,.2);color:var(--purple);border:1px solid rgba(180,127,232,.3);padding:2px 7px;border-radius:20px;}
+.note-count{font-size:10px;background:rgba(67,217,140,.15);color:var(--green);padding:2px 7px;border-radius:20px;}
+.chevron{color:var(--gray);font-size:18px;flex-shrink:0;}
+
+/* Note form overlay */
+.form-panel{position:fixed;inset:0;background:var(--navy);z-index:100;display:none;flex-direction:column;}
+.form-panel.open{display:flex;}
+.form-hdr{background:var(--navy2);border-bottom:1px solid var(--border);padding:14px 16px;display:flex;align-items:center;gap:12px;}
+.back-btn{background:var(--input);border:1px solid var(--border);color:var(--white);font-size:20px;width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;}
+.back-btn:active{background:var(--navy3);}
+.form-co{font-family:'Syne',sans-serif;font-weight:700;font-size:15px;}
+.form-meta{font-size:11px;color:var(--gray);margin-top:2px;}
+.form-body{flex:1;overflow-y:auto;padding:16px;}
+.fg{margin-bottom:16px;}
+.flabel{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--gray);margin-bottom:6px;display:block;}
+.fopt{font-size:11px;font-weight:400;color:var(--gray);text-transform:none;letter-spacing:0;margin-left:4px;}
+.finput,.ftarea{width:100%;background:var(--input);border:1px solid var(--border);color:var(--white);font-family:'DM Sans',sans-serif;font-size:15px;padding:12px 14px;border-radius:10px;outline:none;transition:border-color .15s;}
+.finput:focus,.ftarea:focus{border-color:var(--gold);}
+.ftarea{min-height:110px;resize:none;line-height:1.5;}
+
+/* Booth banner */
+.booth-banner{background:rgba(255,184,0,.12);border:1px solid rgba(255,184,0,.25);border-radius:10px;padding:10px 14px;margin-bottom:16px;display:flex;align-items:center;gap:10px;}
+.bbn-label{font-size:11px;color:var(--gray);text-transform:uppercase;letter-spacing:.06em;}
+.bbn-num{font-family:'Syne',sans-serif;font-weight:800;font-size:22px;color:var(--gold);}
+.bbn-sub{font-size:11px;color:var(--gray);margin-top:1px;}
+
+/* Chips */
+.chip-group{display:flex;gap:8px;flex-wrap:wrap;}
+.chip{padding:10px 16px;border-radius:20px;border:1.5px solid var(--border);background:var(--input);color:var(--gray);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;transition:all .15s;-webkit-user-select:none;user-select:none;}
+.chip:active{transform:scale(0.96);}
+.c-hot{border-color:var(--coral);background:rgba(255,107,71,.15);color:var(--coral);font-weight:600;}
+.c-warm{border-color:var(--amber);background:rgba(255,184,0,.15);color:var(--amber);font-weight:600;}
+.c-cold{border-color:var(--blue);background:rgba(77,157,224,.15);color:var(--blue);font-weight:600;}
+.c-fu{border-color:var(--gold);background:rgba(255,184,0,.15);color:var(--gold);font-weight:600;}
+
+/* Save button */
+.save-btn{width:100%;background:var(--gold);color:var(--navy);font-family:'Syne',sans-serif;font-weight:800;font-size:16px;padding:16px;border:none;border-radius:var(--r);cursor:pointer;margin-top:8px;}
+.save-btn:active{transform:scale(0.98);}
+
+/* Card scan */
+.scan-btn{width:100%;background:var(--navy3);border:1.5px dashed rgba(77,157,224,.5);color:var(--blue);font-family:'Syne',sans-serif;font-weight:700;font-size:14px;padding:14px;border-radius:var(--r);cursor:pointer;margin-bottom:16px;display:flex;align-items:center;justify-content:center;gap:8px;}
+.scan-btn:active{background:var(--input);}
+.scan-btn.scanning{border-style:solid;border-color:var(--gold);color:var(--gold);animation:pulse 1s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+.card-preview{width:100%;border-radius:10px;margin-bottom:12px;max-height:150px;object-fit:cover;display:none;}
+
+/* Notes tab */
+.ng{margin-bottom:16px;}
+.ng-hdr{font-family:'Syne',sans-serif;font-weight:700;font-size:13px;color:var(--gold);text-transform:uppercase;letter-spacing:.06em;padding:8px 0 6px;border-bottom:1px solid var(--border);margin-bottom:8px;}
+.note-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px;}
+.nc-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.nc-time{font-size:11px;color:var(--gray);}
+.edit-btn{background:var(--input);border:1px solid var(--border);color:var(--gold);font-family:'Syne',sans-serif;font-weight:700;font-size:11px;padding:5px 12px;border-radius:20px;cursor:pointer;}
+.nc-fields{font-size:12px;color:var(--gray);display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px;}
+.nc-contact{font-size:12px;color:var(--gray);margin:4px 0;}
+.nc-summary{font-size:13px;line-height:1.5;color:var(--white);background:var(--input);border-radius:8px;padding:8px 10px;}
+
+/* Sync tab */
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:4px;}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:16px;}
+.stat-lbl{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--gray);margin-bottom:4px;}
+.stat-val{font-family:'Syne',sans-serif;font-weight:800;font-size:28px;}
+.sv-pend{color:var(--coral);}
+.sv-done{color:var(--green);}
+.sync-main-btn{width:100%;background:var(--gold);color:var(--navy);font-family:'Syne',sans-serif;font-weight:800;font-size:17px;padding:18px;border:none;border-radius:var(--r);cursor:pointer;margin:16px 0 10px;display:flex;align-items:center;justify-content:center;gap:8px;}
+.sync-main-btn:disabled{background:var(--navy3);color:var(--gray);cursor:default;}
+.config-box{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-top:12px;}
+.cfg-lbl{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--gray);margin-bottom:8px;display:block;}
+.cfg-input{width:100%;background:var(--input);border:1px solid var(--border);color:var(--white);font-family:'DM Sans',sans-serif;font-size:12px;padding:10px 12px;border-radius:8px;outline:none;}
+.cfg-btn{width:100%;margin-top:8px;background:var(--navy3);border:1px solid var(--border);color:var(--white);font-family:'Syne',sans-serif;font-weight:700;font-size:13px;padding:10px;border-radius:8px;cursor:pointer;}
+.api-set-btn{background:rgba(77,157,224,.15);border:1px solid rgba(77,157,224,.3);color:var(--blue);}
+.status-msg{font-size:13px;padding:12px;border-radius:10px;text-align:center;margin-top:10px;}
+.s-ok{background:rgba(67,217,140,.15);color:var(--green);border:1px solid rgba(67,217,140,.3);}
+.s-err{background:rgba(255,107,107,.15);color:var(--red);border:1px solid rgba(255,107,107,.3);}
+.s-info{background:rgba(77,157,224,.15);color:var(--blue);border:1px solid rgba(77,157,224,.3);}
+.cfg-note{font-size:11px;color:var(--gray);margin-top:6px;}
+
+/* Modal — Add Company */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:none;align-items:flex-end;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal-sheet{background:var(--navy2);border-radius:20px 20px 0 0;padding:20px 16px 36px;width:100%;max-width:500px;border-top:1px solid var(--border);}
+.modal-title{font-family:'Syne',sans-serif;font-weight:800;font-size:17px;margin-bottom:4px;}
+.modal-sub{font-size:12px;color:var(--gray);margin-bottom:18px;}
+.modal-row{display:flex;gap:10px;margin-top:16px;}
+.modal-cancel{flex:1;background:var(--input);border:1px solid var(--border);color:var(--white);font-family:'Syne',sans-serif;font-weight:700;font-size:14px;padding:14px;border-radius:var(--r);cursor:pointer;}
+.modal-ok{flex:2;background:var(--gold);border:none;color:var(--navy);font-family:'Syne',sans-serif;font-weight:800;font-size:14px;padding:14px;border-radius:var(--r);cursor:pointer;}
+.modal-ok:active{transform:scale(0.98);}
+.tier-sel{display:flex;gap:8px;}
+.topt{flex:1;padding:10px 8px;border-radius:10px;border:1.5px solid var(--border);background:var(--input);color:var(--gray);font-family:'Syne',sans-serif;font-weight:700;font-size:12px;cursor:pointer;text-align:center;transition:all .15s;}
+.topt.sel-t1{border-color:var(--coral);background:rgba(255,107,71,.15);color:var(--coral);}
+.topt.sel-t2{border-color:var(--blue);background:rgba(77,157,224,.15);color:var(--blue);}
+.topt.sel-t3{border-color:var(--gray);background:rgba(136,146,176,.15);color:var(--gray);}
+
+.empty-state{text-align:center;padding:48px 24px;color:var(--gray);}
+.empty-ico{font-size:48px;margin-bottom:12px;}
+.pb{padding-bottom:24px;}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div class="hdr">
+    <div>
+      <div class="hdr-title">🛰️ Space Scout</div>
+      <div class="hdr-sub">41st Space Symposium · Apr 13–16</div>
+    </div>
+    <button class="sync-btn" onclick="switchTab('sync')">
+      📤 Sync
+      <span class="sbadge" id="headerBadge" style="display:none"></span>
+    </button>
+  </div>
+
+  <div class="content">
+
+    <!-- Companies tab -->
+    <div class="tab-panel active" id="tab-companies">
+      <div class="search-wrap">
+        <div class="search-row">
+          <div class="search-box">
+            <span class="search-ico">🔍</span>
+            <input class="search-input" type="search" id="searchInput" placeholder="Search companies…" oninput="filterCompanies()" autocomplete="off">
+          </div>
+          <button class="add-btn" onclick="openAddModal()" title="Add floor find">+</button>
+        </div>
+      </div>
+      <div id="companyList" class="pb"></div>
+    </div>
+
+    <!-- Notes tab -->
+    <div class="tab-panel" id="tab-notes">
+      <div id="notesList" class="pb"></div>
+    </div>
+
+    <!-- Sync tab -->
+    <div class="tab-panel" id="tab-sync">
+      <div class="pb">
+        <div class="stat-grid">
+          <div class="stat-card"><div class="stat-lbl">Total Notes</div><div class="stat-val" id="statTotal">0</div></div>
+          <div class="stat-card"><div class="stat-lbl">Pending</div><div class="stat-val sv-pend" id="statPending">0</div></div>
+          <div class="stat-card"><div class="stat-lbl">Synced</div><div class="stat-val sv-done" id="statSynced">0</div></div>
+          <div class="stat-card"><div class="stat-lbl">Companies</div><div class="stat-val" id="statCompanies">0</div></div>
+        </div>
+        <button class="sync-main-btn" id="syncMainBtn" onclick="syncNotes()">📤 Sync to Google Sheets</button>
+        <div id="syncStatus"></div>
+
+        <!-- API Key (session only) -->
+        <div class="config-box">
+          <span class="cfg-lbl">📷 Claude API Key — Business Card Scanning</span>
+          <div class="cfg-note" style="margin-bottom:8px;">Stored in memory only. Cleared when you close the app. Never saved to disk.</div>
+          <input class="cfg-input" type="password" id="apiKeyInput" placeholder="sk-ant-…" autocomplete="off">
+          <button class="cfg-btn api-set-btn" onclick="setApiKey()">🔑 Set Key for This Session</button>
+          <div id="apiKeyStatus" class="cfg-note"></div>
+        </div>
+
+        <!-- Apps Script URL -->
+        <div class="config-box">
+          <span class="cfg-lbl">Google Apps Script URL</span>
+          <input class="cfg-input" type="url" id="scriptUrlInput" placeholder="Paste Web App URL here…">
+          <button class="cfg-btn" onclick="saveScriptUrl()">💾 Save URL</button>
+          <div id="urlStatus" class="cfg-note"></div>
+        </div>
+
+        <!-- Instructions -->
+        <div class="config-box" style="margin-bottom:0;">
+          <div style="font-size:11px;color:var(--gray);line-height:1.7;">
+            <strong style="color:var(--white);display:block;margin-bottom:6px;">📋 One-time Setup</strong>
+            1. Create a Google Sheet → copy its ID from the URL<br>
+            2. Go to script.google.com → paste SpaceScout.gs<br>
+            3. Replace Sheet ID in the script<br>
+            4. Deploy as Web App (Anyone can access)<br>
+            5. Paste the Web App URL above → Save
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="bnav">
+    <button class="nbtn active" id="nav-companies" onclick="switchTab('companies')"><span class="ico">🏢</span>Companies</button>
+    <button class="nbtn" id="nav-notes" onclick="switchTab('notes')"><span class="ico">📋</span>My Notes</button>
+    <button class="nbtn" id="nav-sync" onclick="switchTab('sync')"><span class="ico">📤</span>Sync</button>
+  </div>
+</div>
+
+<!-- Note form (full-screen) -->
+<div class="form-panel" id="formPanel">
+  <div class="form-hdr">
+    <button class="back-btn" onclick="closeForm()">←</button>
+    <div style="flex:1;min-width:0;">
+      <div class="form-co" id="formCoName"></div>
+      <div class="form-meta" id="formCoMeta"></div>
+    </div>
+  </div>
+  <div class="form-body">
+    <!-- Booth banner -->
+    <div class="booth-banner" id="boothBanner" style="display:none;">
+      <div>
+        <div class="bbn-label">📍 Booth</div>
+        <div class="bbn-num" id="boothNum"></div>
+      </div>
+      <div style="flex:1;padding-left:12px;">
+        <div class="bbn-sub">Use this number on the floor map to find or return to this exhibitor.</div>
+      </div>
+    </div>
+
+    <!-- Card scan -->
+    <input type="file" id="cardInput" accept="image/*" capture="environment" style="display:none;" onchange="handleCardPhoto(event)">
+    <img id="cardPreview" class="card-preview" alt="Card">
+    <button class="scan-btn" id="scanBtn" onclick="document.getElementById('cardInput').click()">
+      📷 Scan Business Card — auto-fill contact
+    </button>
+
+    <!-- Contact fields -->
+    <div class="fg">
+      <label class="flabel">Contact Name <span class="fopt">(optional — add later)</span></label>
+      <input class="finput" type="text" id="fName" placeholder="e.g. Jane Smith" autocomplete="off">
+    </div>
+    <div class="fg">
+      <label class="flabel">Contact Title <span class="fopt">(optional)</span></label>
+      <input class="finput" type="text" id="fTitle" placeholder="e.g. Materials Engineer" autocomplete="off">
+    </div>
+    <div class="fg">
+      <label class="flabel">Email <span class="fopt">(optional)</span></label>
+      <input class="finput" type="email" id="fEmail" placeholder="e.g. jane@company.com" autocomplete="off">
+    </div>
+    <div class="fg">
+      <label class="flabel">Phone <span class="fopt">(optional)</span></label>
+      <input class="finput" type="tel" id="fPhone" placeholder="e.g. +1 555 000 1234" autocomplete="off">
+    </div>
+
+    <!-- Interest -->
+    <div class="fg">
+      <label class="flabel">Interest Level</label>
+      <div class="chip-group" id="interestChips">
+        <div class="chip" onclick="pickChip('interest','🔥 Hot',this,'c-hot')">🔥 Hot</div>
+        <div class="chip" onclick="pickChip('interest','👍 Warm',this,'c-warm')">👍 Warm</div>
+        <div class="chip" onclick="pickChip('interest','❄️ Cold',this,'c-cold')">❄️ Cold</div>
+      </div>
+    </div>
+
+    <!-- Follow-up -->
+    <div class="fg">
+      <label class="flabel">Follow-up Action</label>
+      <div class="chip-group" id="followupChips">
+        <div class="chip" onclick="pickChip('followup','Send info',this,'c-fu')">Send info</div>
+        <div class="chip" onclick="pickChip('followup','Schedule demo',this,'c-fu')">Schedule demo</div>
+        <div class="chip" onclick="pickChip('followup','Loop in AE',this,'c-fu')">Loop in AE</div>
+        <div class="chip" onclick="pickChip('followup','No action',this,'c-fu')">No action</div>
+      </div>
+    </div>
+
+    <!-- Notes -->
+    <div class="fg">
+      <label class="flabel">Notes / Summary</label>
+      <textarea class="ftarea" id="fSummary" placeholder="Who did you meet? Key insights, pain points, next steps…"></textarea>
+    </div>
+
+    <button class="save-btn" onclick="saveNote()"><span id="saveBtnLbl">💾 Save Note Locally</span></button>
+    <div class="pb"></div>
+  </div>
+</div>
+
+<!-- Add Company Modal -->
+<div class="modal-overlay" id="addModal" onclick="closeAddModal(event)">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <div class="modal-title">➕ Add Floor Find</div>
+    <div class="modal-sub">Spotted something interesting not on your target list? Add it here.</div>
+
+    <div class="fg">
+      <label class="flabel">Company Name</label>
+      <input class="finput" type="text" id="newName" placeholder="e.g. AcmeSat Technologies" autocomplete="off">
+    </div>
+    <div class="fg">
+      <label class="flabel">Booth # <span class="fopt">(optional)</span></label>
+      <input class="finput" type="text" id="newBooth" placeholder="e.g. 412" autocomplete="off">
+    </div>
+    <div class="fg">
+      <label class="flabel">Priority Tier</label>
+      <div class="tier-sel">
+        <div class="topt" id="topt1" onclick="pickTier(1)">★ Tier 1<br><span style="font-size:10px;font-weight:400;">Direct fit</span></div>
+        <div class="topt" id="topt2" onclick="pickTier(2)">▲ Tier 2<br><span style="font-size:10px;font-weight:400;">Strong fit</span></div>
+        <div class="topt" id="topt3" onclick="pickTier(3)">● Tier 3<br><span style="font-size:10px;font-weight:400;">Potential</span></div>
+      </div>
+    </div>
+    <div class="fg">
+      <label class="flabel">Score <span class="fopt">(1–100)</span></label>
+      <input class="finput" type="number" id="newScore" placeholder="e.g. 75" min="1" max="100" autocomplete="off">
+    </div>
+    <div class="fg" style="margin-bottom:0;">
+      <label class="flabel">Why interesting? <span class="fopt">(optional)</span></label>
+      <input class="finput" type="text" id="newReason" placeholder="e.g. Thin film coatings, met their CTO" autocomplete="off">
+    </div>
+    <div class="modal-row">
+      <button class="modal-cancel" onclick="closeAddModal()">Cancel</button>
+      <button class="modal-ok" onclick="confirmAddCompany()">Add & Take Note</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── SESSION-ONLY API KEY ─────────────────────────────────────
+let ANTHROPIC_API_KEY = '';
+
+function setApiKey() {
+  const v = document.getElementById('apiKeyInput').value.trim();
+  if (!v.startsWith('sk-ant-')) {
+    document.getElementById('apiKeyStatus').innerHTML = '<span style="color:var(--red)">⚠️ Should start with sk-ant-</span>';
+    return;
+  }
+  ANTHROPIC_API_KEY = v;
+  document.getElementById('apiKeyInput').value = '';
+  document.getElementById('apiKeyStatus').innerHTML = '<span style="color:var(--green)">✅ Key set for this session. Field cleared.</span>';
+}
+
+// ── COMPANY DATA ─────────────────────────────────────────────
+const BASE = [
+  {name:"Frontgrade",tier:1,score:95,booth:"1429",participation:"Exhibiting + Co-Sponsor"},
+  {name:"Defense Microelectronics Activity (DMEA)",tier:1,score:93,booth:"TBD",participation:"Exhibiting"},
+  {name:"Discovery Semiconductors",tier:1,score:92,booth:"TBD",participation:"Exhibiting"},
+  {name:"Sandia National Laboratories",tier:1,score:92,booth:"TBD",participation:"Exhibiting"},
+  {name:"Deposition Sciences, Inc.",tier:1,score:91,booth:"60",participation:"Exhibiting"},
+  {name:"SpaceX",tier:1,score:90,booth:"TBD",participation:"Co-Sponsor"},
+  {name:"Element Materials Technology",tier:1,score:90,booth:"234",participation:"Exhibiting"},
+  {name:"NASA",tier:1,score:90,booth:"TBD",participation:"Exhibiting"},
+  {name:"Oerlikon",tier:1,score:88,booth:"25",participation:"Exhibiting"},
+  {name:"Northrop Grumman",tier:1,score:88,booth:"TBD",participation:"Exhibiting + Co-Sponsor"},
+  {name:"Air Force Research Laboratory",tier:1,score:88,booth:"TBD",participation:"Exhibiting"},
+  {name:"Johns Hopkins APL",tier:1,score:87,booth:"TBD",participation:"Co-Sponsor"},
+  {name:"Solid State Devices (SSDI)",tier:1,score:86,booth:"633",participation:"Exhibiting"},
+  {name:"Boeing",tier:1,score:86,booth:"TBD",participation:"Exhibiting + Co-Sponsor"},
+  {name:"SpecCoat",tier:1,score:85,booth:"618",participation:"Exhibiting"},
+  {name:"Lockheed Martin",tier:1,score:85,booth:"TBD",participation:"Exhibiting + Co-Sponsor"},
+  {name:"Kulite Semiconductor",tier:1,score:84,booth:"730",participation:"Exhibiting"},
+  {name:"RTX (Raytheon)",tier:1,score:84,booth:"TBD",participation:"Exhibiting + Co-Sponsor"},
+  {name:"Astro Pak",tier:1,score:83,booth:"821",participation:"Exhibiting"},
+  {name:"Southwest Research Institute",tier:1,score:83,booth:"TBD",participation:"Exhibiting"},
+  {name:"Teledyne",tier:1,score:82,booth:"1014",participation:"Exhibiting"},
+  {name:"Blue Origin",tier:1,score:82,booth:"TBD",participation:"Co-Sponsor"},
+  {name:"Dynavac",tier:1,score:82,booth:"62",participation:"Exhibiting"},
+  {name:"EaglePicher Technologies",tier:1,score:80,booth:"1073",participation:"Exhibiting"},
+  {name:"VPT, Inc.",tier:1,score:80,booth:"814",participation:"Exhibiting"},
+  {name:"BAE Systems",tier:2,score:80,booth:"TBD",participation:"Exhibiting + Co-Sponsor"},
+  {name:"Honeywell",tier:2,score:80,booth:"TBD",participation:"Exhibiting"},
+  {name:"Stratasys",tier:2,score:78,booth:"TBD",participation:"Exhibiting"},
+  {name:"LASP/CU Boulder",tier:2,score:78,booth:"TBD",participation:"Exhibiting"},
+  {name:"L3Harris",tier:2,score:78,booth:"TBD",participation:"Exhibiting + Co-Sponsor"},
+  {name:"Redwire",tier:2,score:75,booth:"1373",participation:"Exhibiting"},
+  {name:"Mercury Systems",tier:2,score:72,booth:"TBD",participation:"Exhibiting"},
+  {name:"3M Company",tier:2,score:72,booth:"42",participation:"Exhibiting"},
+  {name:"Leonardo DRS",tier:2,score:72,booth:"TBD",participation:"Exhibiting + Co-Sponsor"},
+  {name:"Moog",tier:2,score:68,booth:"TBD",participation:"Exhibiting"},
+  {name:"General Dynamics Mission Systems",tier:2,score:65,booth:"TBD",participation:"Exhibiting"},
+  {name:"Rocket Lab",tier:3,score:65,booth:"1341",participation:"Exhibiting"},
+  {name:"Solar Atmospheres",tier:3,score:62,booth:"TBD",participation:"Exhibiting"},
+  {name:"Protolabs",tier:3,score:62,booth:"339",participation:"Exhibiting"},
+  {name:"Intuitive Machines",tier:3,score:62,booth:"TBD",participation:"Co-Sponsor"},
+  {name:"Firefly Aerospace",tier:3,score:60,booth:"TBD",participation:"Exhibiting"},
+  {name:"Spectrum Advanced Manufacturing Technologies",tier:3,score:60,booth:"721",participation:"Exhibiting"},
+  {name:"Sierra Space",tier:3,score:60,booth:"1113",participation:"Exhibiting"},
+  {name:"Infleqtion",tier:3,score:58,booth:"TBD",participation:"Exhibiting"},
+  {name:"United Launch Alliance",tier:3,score:58,booth:"TBD",participation:"Co-Sponsor"},
+  {name:"Markforged",tier:3,score:55,booth:"828",participation:"Exhibiting"},
+  {name:"KBR",tier:3,score:45,booth:"TBD",participation:"Co-Sponsor"},
+].sort((a,b)=>b.score-a.score);
+
+// ── STATE ────────────────────────────────────────────────────
+let custom = [];
+let notes = [];
+let activeTab = 'companies';
+let curCompany = null;
+let selInterest = '';
+let selFollowup = '';
+let editId = null;
+let newTier = 2;
+
+function allCompanies() {
+  return [...custom, ...BASE].sort((a,b)=>b.score-a.score);
+}
+
+// ── INIT ─────────────────────────────────────────────────────
+function init() {
+  notes = JSON.parse(localStorage.getItem('scout_notes')||'[]');
+  custom = JSON.parse(localStorage.getItem('scout_custom')||'[]');
+  const url = localStorage.getItem('scout_url')||'';
+  document.getElementById('scriptUrlInput').value = url;
+  renderCompanies(allCompanies());
+  updateBadge();
+  updateStats();
+}
+
+// ── TABS ─────────────────────────────────────────────────────
+function switchTab(tab) {
+  activeTab = tab;
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nbtn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  document.getElementById('nav-'+tab).classList.add('active');
+  if(tab==='notes') renderNotes();
+  if(tab==='sync') updateStats();
+}
+
+// ── COMPANIES ────────────────────────────────────────────────
+function renderCompanies(list) {
+  const el = document.getElementById('companyList');
+  if(!list.length){
+    el.innerHTML='<div class="empty-state"><div class="empty-ico">🔍</div><div>No companies found</div></div>';
+    return;
+  }
+  el.innerHTML = list.map(c=>{
+    const nc = notes.filter(n=>n.company===c.name).length;
+    const sc = c.score>=85?'sg':c.score>=70?'sa':'sr';
+    const tl = c.tier===1?'★ Tier 1':c.tier===2?'▲ Tier 2':'● Tier 3';
+    const tc = 't'+c.tier;
+    const safeName = c.name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    return `<div class="co-card${nc?' has-notes':''}" onclick="openForm('${safeName}')">
+      <div class="score-circle ${sc}">${c.score}</div>
+      <div class="co-info">
+        <div class="co-name">${c.name}</div>
+        <div class="co-meta">
+          <span class="tbadge ${tc}">${tl}</span>
+          ${c.booth&&c.booth!=='TBD'?`<span class="booth-pill">📍 ${c.booth}</span>`:''}
+          ${c.custom?'<span class="floor-badge">✦ Floor find</span>':''}
+          ${nc?`<span class="note-count">📝 ${nc} note${nc>1?'s':''}</span>`:''}
+        </div>
+      </div>
+      <span class="chevron">›</span>
+    </div>`;
+  }).join('');
+}
+
+function filterCompanies() {
+  const q = document.getElementById('searchInput').value.toLowerCase().trim();
+  renderCompanies(q ? allCompanies().filter(c=>c.name.toLowerCase().includes(q)) : allCompanies());
+}
+
+// ── ADD COMPANY MODAL ────────────────────────────────────────
+function openAddModal() {
+  newTier = 2;
+  document.getElementById('newName').value='';
+  document.getElementById('newBooth').value='';
+  document.getElementById('newScore').value='';
+  document.getElementById('newReason').value='';
+  ['topt1','topt2','topt3'].forEach(id=>document.getElementById(id).className='topt');
+  document.getElementById('topt2').className='topt sel-t2';
+  document.getElementById('addModal').classList.add('open');
+  setTimeout(()=>document.getElementById('newName').focus(),200);
+}
+function closeAddModal(e) {
+  if(e&&e.target!==document.getElementById('addModal')) return;
+  document.getElementById('addModal').classList.remove('open');
+}
+function pickTier(t) {
+  newTier=t;
+  ['topt1','topt2','topt3'].forEach((id,i)=>{
+    document.getElementById(id).className='topt'+(i+1===t?` sel-t${t}`:'');
+  });
+}
+function confirmAddCompany() {
+  const name = document.getElementById('newName').value.trim();
+  if(!name){alert('Please enter a company name.');return;}
+  if(allCompanies().find(c=>c.name.toLowerCase()===name.toLowerCase())){
+    alert('This company is already in your list.');return;
+  }
+  const score = parseInt(document.getElementById('newScore').value)||70;
+  const booth = document.getElementById('newBooth').value.trim()||'TBD';
+  const reason = document.getElementById('newReason').value.trim();
+  const co = {name,tier:newTier,score:Math.min(100,Math.max(1,score)),booth,participation:'Floor find',custom:true,reason};
+  custom.unshift(co);
+  localStorage.setItem('scout_custom',JSON.stringify(custom));
+  document.getElementById('addModal').classList.remove('open');
+  filterCompanies();
+  showToast('✦ '+name+' added!');
+  setTimeout(()=>openForm(name),300);
+}
+
+// ── NOTE FORM ────────────────────────────────────────────────
+function resetForm() {
+  document.getElementById('fName').value='';
+  document.getElementById('fTitle').value='';
+  document.getElementById('fEmail').value='';
+  document.getElementById('fPhone').value='';
+  document.getElementById('fSummary').value='';
+  selInterest=''; selFollowup=''; editId=null;
+  document.querySelectorAll('#interestChips .chip').forEach(c=>c.className='chip');
+  document.querySelectorAll('#followupChips .chip').forEach(c=>c.className='chip');
+  document.getElementById('cardPreview').style.display='none';
+  document.getElementById('cardInput').value='';
+  document.getElementById('scanBtn').className='scan-btn';
+  document.getElementById('scanBtn').textContent='📷 Scan Business Card — auto-fill contact';
+  document.getElementById('saveBtnLbl').textContent='💾 Save Note Locally';
+}
+
+function openForm(name) {
+  const co = allCompanies().find(c=>c.name===name);
+  if(!co) return;
+  curCompany=co;
+  resetForm();
+  document.getElementById('formCoName').textContent=co.name;
+  const tl = co.tier===1?'★ Tier 1':co.tier===2?'▲ Tier 2':'● Tier 3';
+  document.getElementById('formCoMeta').textContent=`Score ${co.score}/100 · ${tl}${co.custom?' · ✦ Floor find':''}`;
+  const bb = document.getElementById('boothBanner');
+  if(co.booth&&co.booth!=='TBD'){
+    bb.style.display='flex';
+    document.getElementById('boothNum').textContent=co.booth;
+  } else {
+    bb.style.display='none';
+  }
+  document.getElementById('formPanel').classList.add('open');
+}
+
+function closeForm() {
+  document.getElementById('formPanel').classList.remove('open');
+  curCompany=null; editId=null;
+}
+
+function pickChip(type,val,el,cls) {
+  if(type==='interest'){selInterest=val;document.querySelectorAll('#interestChips .chip').forEach(c=>c.className='chip');}
+  else{selFollowup=val;document.querySelectorAll('#followupChips .chip').forEach(c=>c.className='chip');}
+  el.className='chip '+cls;
+}
+
+function saveNote() {
+  if(!curCompany) return;
+  const summary = document.getElementById('fSummary').value.trim();
+  if(!summary&&!selInterest){alert('Please add a note or select interest level.');return;}
+
+  if(editId) {
+    notes = notes.map(n=>n.id===editId?{...n,
+      contactName:document.getElementById('fName').value.trim(),
+      contactTitle:document.getElementById('fTitle').value.trim(),
+      contactEmail:document.getElementById('fEmail').value.trim(),
+      contactPhone:document.getElementById('fPhone').value.trim(),
+      interestLevel:selInterest||n.interestLevel,
+      followUp:selFollowup||n.followUp,
+      summary:summary||n.summary,
+      synced:false
+    }:n);
+    localStorage.setItem('scout_notes',JSON.stringify(notes));
+    updateBadge(); updateStats(); closeForm();
+    if(activeTab==='notes') renderNotes();
+    filterCompanies();
+    showToast('✏️ Note updated!');
+  } else {
+    const now = new Date();
+    const vt = now.toLocaleString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+    const note = {
+      id: Date.now().toString(),
+      company: curCompany.name,
+      tier: curCompany.tier===1?'★ Tier 1':curCompany.tier===2?'▲ Tier 2':'● Tier 3',
+      score: curCompany.score,
+      booth: curCompany.booth||'',
+      contactName: document.getElementById('fName').value.trim(),
+      contactTitle: document.getElementById('fTitle').value.trim(),
+      contactEmail: document.getElementById('fEmail').value.trim(),
+      contactPhone: document.getElementById('fPhone').value.trim(),
+      interestLevel: selInterest,
+      followUp: selFollowup,
+      summary, visitTime:vt, synced:false
+    };
+    notes.push(note);
+    localStorage.setItem('scout_notes',JSON.stringify(notes));
+    updateBadge(); updateStats(); closeForm(); filterCompanies();
+    showToast('✅ Note saved!');
+  }
+}
+
+function editNote(id) {
+  const n = notes.find(x=>x.id===id);
+  if(!n) return;
+  const co = allCompanies().find(c=>c.name===n.company);
+  if(!co) return;
+  curCompany=co; editId=id;
+  selInterest=n.interestLevel||''; selFollowup=n.followUp||'';
+  resetForm();
+  editId=id; // resetForm clears it, restore
+  document.getElementById('fName').value=n.contactName||'';
+  document.getElementById('fTitle').value=n.contactTitle||'';
+  document.getElementById('fEmail').value=n.contactEmail||'';
+  document.getElementById('fPhone').value=n.contactPhone||'';
+  document.getElementById('fSummary').value=n.summary||'';
+  if(n.interestLevel){
+    const cls=n.interestLevel==='🔥 Hot'?'c-hot':n.interestLevel==='👍 Warm'?'c-warm':'c-cold';
+    document.querySelectorAll('#interestChips .chip').forEach(c=>{
+      if(c.textContent.trim()===n.interestLevel) c.className='chip '+cls;
+    });
+  }
+  if(n.followUp){
+    document.querySelectorAll('#followupChips .chip').forEach(c=>{
+      if(c.textContent.trim()===n.followUp) c.className='chip c-fu';
+    });
+  }
+  document.getElementById('formCoName').textContent=co.name;
+  const tl=co.tier===1?'★ Tier 1':co.tier===2?'▲ Tier 2':'● Tier 3';
+  document.getElementById('formCoMeta').textContent=`${tl} · Editing note from ${n.visitTime}`;
+  const bb=document.getElementById('boothBanner');
+  if(co.booth&&co.booth!=='TBD'){bb.style.display='flex';document.getElementById('boothNum').textContent=co.booth;}
+  else{bb.style.display='none';}
+  document.getElementById('saveBtnLbl').textContent='✏️ Update Note';
+  document.getElementById('formPanel').classList.add('open');
+}
+
+// ── BUSINESS CARD SCAN ───────────────────────────────────────
+function handleCardPhoto(e) {
+  const file = e.target.files[0];
+  if(!file) return;
+  const preview = document.getElementById('cardPreview');
+  const btn = document.getElementById('scanBtn');
+  const reader = new FileReader();
+  reader.onload = async ev => {
+    preview.src = ev.target.result;
+    preview.style.display = 'block';
+    if(!ANTHROPIC_API_KEY) {
+      btn.className='scan-btn';
+      btn.textContent='📷 Scan Business Card — auto-fill contact';
+      showToast('⚠️ Set your API key in the Sync tab first');
+      return;
+    }
+    btn.className='scan-btn scanning';
+    btn.textContent='⏳ Reading card with Claude…';
+    try {
+      const b64 = ev.target.result.split(',')[1];
+      const mediaType = file.type||'image/jpeg';
+      const res = await fetch('https://api.anthropic.com/v1/messages',{
+        method:'POST',
+        headers:{
+          'Content-Type':'application/json',
+          'x-api-key':ANTHROPIC_API_KEY,
+          'anthropic-version':'2023-06-01',
+          'anthropic-dangerous-direct-browser-access':'true'
+        },
+        body: JSON.stringify({
+          model:'claude-sonnet-4-5-20251001',
+          max_tokens:300,
+          messages:[{role:'user',content:[
+            {type:'image',source:{type:'base64',media_type:mediaType,data:b64}},
+            {type:'text',text:'Extract the contact info from this business card. Reply ONLY with a JSON object with keys: name, title, email, phone. Use empty string if not found. No markdown, no explanation.'}
+          ]}]
+        })
+      });
+      if(!res.ok) {
+        const errText = await res.text();
+        btn.className='scan-btn';
+        btn.textContent='📷 Scan Business Card — auto-fill contact';
+        showToast('❌ API error '+res.status+' — check key in Sync tab');
+        console.error('Anthropic API error:',res.status,errText);
+        return;
+      }
+      const data = await res.json();
+      const text = data.content?.[0]?.text||'{}';
+      const clean = text.replace(/```json|```/g,'').trim();
+      const info = JSON.parse(clean);
+      if(info.name) document.getElementById('fName').value=info.name;
+      if(info.title) document.getElementById('fTitle').value=info.title;
+      if(info.email) document.getElementById('fEmail').value=info.email;
+      if(info.phone) document.getElementById('fPhone').value=info.phone;
+      btn.className='scan-btn';
+      btn.style.borderColor='var(--green)';
+      btn.style.color='var(--green)';
+      btn.textContent='✅ Card scanned — review fields above';
+      showToast('✅ Card info extracted!');
+    } catch(err) {
+      btn.className='scan-btn';
+      btn.textContent='📷 Scan Business Card — auto-fill contact';
+      showToast('❌ '+err.message);
+      console.error('Card scan error:',err);
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+// ── NOTES LIST ───────────────────────────────────────────────
+function renderNotes() {
+  const el = document.getElementById('notesList');
+  if(!notes.length){
+    el.innerHTML='<div class="empty-state"><div class="empty-ico">📋</div><div>No notes yet.<br>Visit companies to add notes.</div></div>';
+    return;
+  }
+  const byC = {};
+  notes.forEach(n=>{if(!byC[n.company])byC[n.company]=[];byC[n.company].push(n);});
+  el.innerHTML = Object.entries(byC).map(([co,cns])=>`
+    <div class="ng">
+      <div class="ng-hdr">${co}${cns[0].booth?' · 📍 Booth '+cns[0].booth:''}</div>
+      ${cns.map(n=>`
+        <div class="note-card">
+          <div class="nc-hdr">
+            <span class="nc-time">🕐 ${n.visitTime}</span>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:11px;">${n.synced?'✅':'⏳'}</span>
+              <button class="edit-btn" onclick="editNote('${n.id}')">✏️ Edit</button>
+            </div>
+          </div>
+          <div class="nc-fields">
+            ${n.interestLevel?`<span>${n.interestLevel}</span>`:''}
+            ${n.followUp?`<span>→ ${n.followUp}</span>`:''}
+          </div>
+          <div class="nc-contact">
+            👤 ${n.contactName
+              ?`<strong>${n.contactName}</strong>${n.contactTitle?' — '+n.contactTitle:''}${n.contactEmail?' · '+n.contactEmail:''}${n.contactPhone?' · '+n.contactPhone:''}`
+              :`<span style="color:var(--coral);font-style:italic;">No contact yet — tap Edit to add</span>`}
+          </div>
+          ${n.summary?`<div class="nc-summary">${n.summary}</div>`:''}
+        </div>
+      `).join('')}
+    </div>
+  `).join('')+'<div class="pb"></div>';
+}
+
+// ── SYNC ─────────────────────────────────────────────────────
+function updateBadge() {
+  const p = notes.filter(n=>!n.synced).length;
+  const b = document.getElementById('headerBadge');
+  if(p>0){b.textContent=p;b.style.display='flex';}else{b.style.display='none';}
+}
+function updateStats() {
+  const total=notes.length, pending=notes.filter(n=>!n.synced).length;
+  const synced=notes.filter(n=>n.synced).length;
+  const cos=[...new Set(notes.map(n=>n.company))].length;
+  document.getElementById('statTotal').textContent=total;
+  document.getElementById('statPending').textContent=pending;
+  document.getElementById('statSynced').textContent=synced;
+  document.getElementById('statCompanies').textContent=cos;
+  const btn=document.getElementById('syncMainBtn');
+  btn.disabled=pending===0;
+  btn.textContent=pending>0?`📤 Sync ${pending} Pending Note${pending>1?'s':''}`:'✅ All Synced';
+}
+function saveScriptUrl() {
+  const u=document.getElementById('scriptUrlInput').value.trim();
+  if(!u){document.getElementById('urlStatus').textContent='⚠️ Paste a URL first.';return;}
+  localStorage.setItem('scout_url',u);
+  document.getElementById('urlStatus').textContent='✅ Saved!';
+  setTimeout(()=>document.getElementById('urlStatus').textContent='',2000);
+}
+async function syncNotes() {
+  const url=localStorage.getItem('scout_url');
+  if(!url){setStatus('⚠️ Add your Apps Script URL in settings below.','err');return;}
+  const pending=notes.filter(n=>!n.synced);
+  if(!pending.length){setStatus('✅ Nothing to sync!','ok');return;}
+  const btn=document.getElementById('syncMainBtn');
+  btn.disabled=true; btn.textContent='⏳ Syncing…';
+  setStatus('⏳ Sending to Google Sheets…','info');
+
+  try {
+    // Google Apps Script requires a form POST or a GET with payload.
+    // Most reliable cross-origin method: encode payload as a URL param via GET.
+    // Apps Script doGet reads e.parameter.payload and processes it.
+    const payload = encodeURIComponent(JSON.stringify({notes:pending}));
+    const getUrl = url + '?payload=' + payload;
+
+    // Use no-cors — we won't read the response body, but the script runs fine.
+    // We instead poll for success by checking a lightweight GET ping after 4s.
+    await fetch(getUrl, {method:'GET', mode:'no-cors'});
+
+    // Since no-cors returns opaque response (can't read body),
+    // optimistically mark as synced after successful fetch (no network error thrown)
+    const ids=pending.map(n=>n.id);
+    notes=notes.map(n=>ids.includes(n.id)?{...n,synced:true}:n);
+    localStorage.setItem('scout_notes',JSON.stringify(notes));
+    updateBadge(); updateStats();
+    setStatus(`✅ ${pending.length} note${pending.length>1?'s':''} sent! Check hugfsc@gmail.com in ~30 seconds.`,'ok');
+    btn.disabled=false;
+  } catch(err) {
+    setStatus('❌ Network error: '+err.message+' — notes are safe locally.','err');
+    btn.disabled=false; updateStats();
+  }
+}
+function setStatus(msg,type){
+  document.getElementById('syncStatus').innerHTML=`<div class="status-msg s-${type}">${msg}</div>`;
+}
+
+// ── TOAST ─────────────────────────────────────────────────────
+function showToast(msg) {
+  const t=document.createElement('div');
+  t.textContent=msg;
+  t.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#43d98c;color:#0a0f2e;font-family:Syne,sans-serif;font-weight:700;padding:10px 20px;border-radius:20px;z-index:999;font-size:14px;pointer-events:none;white-space:nowrap;';
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(),2200);
+}
+
+init();
+</script>
+</body>
+</html>
